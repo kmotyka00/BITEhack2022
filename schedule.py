@@ -47,9 +47,9 @@ class Client:
         Helps to print information about the client prettier and cleaner
     """
 
-    def __init__(self, id: int, selected_avaiability: list(), selected_training: List[LessonType] = None):
+    def __init__(self, id: int, selected_training: List[LessonType] = None, selected_availability: List = None):
         self.id = id
-        self.selected_availability = selected_avaiability
+        self.selected_availability = selected_availability
         # checks if list of selected trainings was given, if not, creates empty array
         if selected_training is None:
             self.selected_training = np.array(list())
@@ -373,18 +373,17 @@ class Schedule:
                self.class_renting_cost * class_per_day.sum()
 
         # cost function for user expectations:
-
-        POINTS_FOR_GOOD_ASSIGN = 20
-        cost_client_expectations = 0
-        for client in self.clients:
-            for room in range(current_solution.shape[0]):
-                for day in range(current_solution.shape[1]):
-                    for time_discrete in range(current_solution.shape[2]):
-                        """Sprawdzenie zgodnosci treningu preferowanego przez klienta z treningiem w rozwiązaniu"""
-                        if client.selected_training == current_solution[room][day][time_discrete]:
-                            """Sprawdzenie dostępności zadeklarowanej przez klienta z aktualnym rozwiązaniem"""
-                            if day in [choice[0] for choice in client.selected_availability] and time_discrete in [choice[1][1] for choice in client.selected_availability]:
-                                cost_client_expectations += POINTS_FOR_GOOD_ASSIGN
+        # POINTS_FOR_GOOD_ASSIGN = 20
+        # cost_client_expectations = 0
+        # for client in self.clients:
+        #     for room in range(current_solution.shape[0]):
+        #         for day in range(current_solution.shape[1]):
+        #             for time_discrete in range(current_solution.shape[2]):
+        #                 """Sprawdzenie zgodnosci treningu preferowanego przez klienta z treningiem w rozwiązaniu"""
+        #                 if current_solution[room][day][time_discrete].lesson_type in client.selected_training:
+        #                     """Sprawdzenie dostępności zadeklarowanej przez klienta z aktualnym rozwiązaniem"""
+        #                     if day in [choice[0] for choice in client.selected_availability] and time_discrete in [choice[1][1] for choice in client.selected_availability]:
+        #                         cost_client_expectations += POINTS_FOR_GOOD_ASSIGN
 
         if self.use_penalty_method:
             cost += unmatched_instructors * self.penalty_for_unmatched + \
