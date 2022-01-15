@@ -44,7 +44,7 @@ class Client:
         Helps to print information about the client prettier and cleaner
     """
 
-    def __init__(self, id: int, selected_avaiability: list(), selected_training: List[LessonType] = None):
+    def __init__(self, id: int, selected_training: List[LessonType] = None,  selected_avaiability: List=list()):
         self.id = id
         self.selected_availability = selected_avaiability
         # checks if list of selected trainings was given, if not, creates empty array
@@ -223,6 +223,7 @@ class Schedule:
         self.clients = list()
         df = pd.read_csv(client_file, sep=";")
         for index, client in df.iterrows():
+            #TODO get client_avaiabilty from df
             self.clients.append(Client(client['Client_ID'],
                                        [LessonType(int(elem)) for elem in client['Lesson_Types'].split(sep=" ")]))
         self.clients = np.array(self.clients)
