@@ -11,6 +11,8 @@ app = Flask(__name__)
 def save_json():
     data = request.get_json()
     user_id = str(data["id"])+".json"
+    if not os.path.exists(os.path.join(current_app.root_path, "client_data/json_files")):
+        os.makedirs('my_folder')
     path_to_json = os.path.join(current_app.root_path, "client_data/json_files", user_id)
     with open(path_to_json, 'w') as outfile:
         outfile.write(json.dumps(data))
