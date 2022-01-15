@@ -34,7 +34,8 @@ HOURS_DISCRETE = {
 
 
 DAYS_DISCRETE = [[0, "Poniedzialek"], [1, "Wtorek"], [2, "Sroda"], [3, "Czwartek"], [4, "Piatek"], [5, "Sobota"], [6, "Niedziela"]]
-COURSES_DISCRETE = [[0, "Zumba easy"], [1, "Zumba hard"], [2, "Fitness"]]
+COURSES_DISCRETE = [[0, "CELLULITE KILLER"], [1, "ZUMBA"], [2, "ZUMBA ADVANCED"], [3,"FITNESS"], [4,"CROSSFIT"],
+                    [5,"BRAZILIAN BUTT"], [6,"PILATES"], [7,"CITY PUMP"], [8,"STRETCHING"], [9,"YOGA"]]
 
 
 @users.route("/", methods=['GET', 'POST'])
