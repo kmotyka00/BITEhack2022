@@ -32,7 +32,7 @@ import pandas as pd
 
 
 try:
-    client_file = glob.glob('../client_data/*.csv')[0]
+    client_file = glob.glob('../client_data/Dataset_TEST.xls')[0]
 # When ther is no such file the list is empty and we get index error,
 # which we try to capture
 except IndexError:
@@ -184,7 +184,7 @@ class Optimize(Screen):
                 not_enough_timeslots_popup()
 
 
-            Optimize.clients_num = pd.read_csv(client_file, sep=";").shape[0]
+            # Optimize.clients_num = pd.read_csv(client_file, sep=";").shape[0]
             Optimize.instructors_num = pd.read_csv(instructor_file, sep=";").shape[0]
             initial_solution = copy.deepcopy(schedule_global)
 

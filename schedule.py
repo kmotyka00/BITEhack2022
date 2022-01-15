@@ -234,7 +234,7 @@ class Schedule:
          #                              [LessonType(int(elem)) for elem in client['Lesson_Types'].split(sep=" ")]))
         #self.clients = np.array(self.clients)
         """ NEW CODE """
-        Workbook = xlrd.open_workbook("client_data/" + client_file)
+        Workbook = xlrd.open_workbook(client_file)
         sheet = Workbook.sheet_by_index(0)
         data = list()
         for i in range(9):
@@ -245,7 +245,7 @@ class Schedule:
             for j in range(2,9):
                 if len(data[j][i]) > 1:
                     selected_availability.append([j-2, data[j][i]]) #TODO
-            trainings = [int(i) for i in data[1][i] if i != " "]
+            trainings = [LessonType(int(i)) for i in data[1][i] if i != " "]
             self.clients.append(Client(data[0][i], trainings, selected_availability)) #TODO sprawdzić czy rozdzielić stringa
         self.clients = np.array(self.clients)
         self.instructors = list()
@@ -766,46 +766,47 @@ class Schedule:
         return result
 
 
-SM = Schedule(client_file=CLIENTS_PATH,
-                instructor_file='./instructor_data/instructors_info_2.csv',
-                max_clients_per_training=5, time_slot_num=6, class_num=2)
-SM.generate_random_schedule(greedy=False)
+if __name__ == '__main__':
+    SM = Schedule(client_file=CLIENTS_PATH,
+                    instructor_file='./instructor_data/instructors_info_2.csv',
+                    max_clients_per_training=5, time_slot_num=6, class_num=2)
+    SM.generate_random_schedule(greedy=False)
 
-print("\nINITIAL SCHEDULE")
-print(SM)
-print('Initial earnings: ', SM.get_cost())
-first_cost = SM.get_cost()
-tic = time.time()
-best_cost, num_of_iter, all_costs = SM.simulated_annealing(alpha=0.999, initial_temp=1000, n_iter_one_temp=10,
-                                                           min_temp=0.1,
-                                                           epsilon=0.01, n_iter_without_improvement=10,
-                                                           initial_solution=False, neighborhood_type_lst=['move_one',
-                                                                                                         'change_instructors'])
-toc = time.time()
+    print("\nINITIAL SCHEDULE")
+    print(SM)
+    print('Initial earnings: ', SM.get_cost())
+    first_cost = SM.get_cost()
+    tic = time.time()
+    best_cost, num_of_iter, all_costs = SM.simulated_annealing(alpha=0.999, initial_temp=1000, n_iter_one_temp=10,
+                                                               min_temp=0.1,
+                                                               epsilon=0.01, n_iter_without_improvement=10,
+                                                               initial_solution=False, neighborhood_type_lst=['move_one',
+                                                                                                             'change_instructors'])
+    toc = time.time()
 
-print("\nAFTER OPTIMIZATION")
-print(SM)
-print("Number of iterations: ", num_of_iter)
+    print("\nAFTER OPTIMIZATION")
+    print(SM)
+    print("Number of iterations: ", num_of_iter)
 
-print("Best earnings: ", best_cost)
-second_cost = best_cost
-print("Time: ", toc - tic)
+    print("Best earnings: ", best_cost)
+    second_cost = best_cost
+    print("Time: ", toc - tic)
 
-SM.improve_results()
-print("\nIMPROVED SCHEDULE")
-print(SM)
-print("Best improved earnings: ", SM.get_cost())
+    SM.improve_results()
+    print("\nIMPROVED SCHEDULE")
+    print(SM)
+    print("Best improved earnings: ", SM.get_cost())
 
-third_cost = SM.get_cost()
+    third_cost = SM.get_cost()
 
-print(f'{first_cost} $ --> {second_cost} $ --> {third_cost} $')
+    print(f'{first_cost} $ --> {second_cost} $ --> {third_cost} $')
 
-plt.figure()
-plt.plot(all_costs)
-plt.title('Goal function over number of iterations')
-plt.xlabel('Number of iterations')
-plt.ylabel('Earnings [$]')
-plt.show()
+    plt.figure()
+    plt.plot(all_costs)
+    plt.title('Goal function over number of iterations')
+    plt.xlabel('Number of iterations')
+    plt.ylabel('Earnings [$]')
+    plt.show()
 
 
 
