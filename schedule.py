@@ -8,6 +8,9 @@ import time
 import matplotlib.pyplot as plt
 
 
+class NotEnoughTimeslots(Exception):
+    pass
+
 class LessonType(Enum):
     """ 
     Class enumerating lesson types,
@@ -293,7 +296,10 @@ class Schedule:
                     lesson_id = i
                     i += 1
                 else:
+                    if (len(free_ts) - 1) <= 0:
+                        raise NotEnoughTimeslots
                     lesson_id = free_ts.pop(random.randint(0, len(free_ts) - 1))
+
                     # TODO obsłużyć zbyt dużą liczbę zajęć - np. poprzez dodanie nowej sali
 
                 # interval in vector self.schedule which represents a break between same time slots
