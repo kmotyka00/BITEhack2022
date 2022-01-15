@@ -1,3 +1,3 @@
 # BITEhack2022
 HELLO WORLD!
-elo
+Żeby odpalić odbieranie jsona trzeba wpisać ```python api.py``` w terminalu
