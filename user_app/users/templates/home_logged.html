@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container">
+    <form action="/" method="GET">
+        <div class="d-flex flex-col flex-wrap">
+
+            {% for c in courses %}
+                <div class="form-group">
+                    <input type="checkbox" id="{{ c[0] }}" name="{{ c[0] }}">
+                    <label for="{{ c[0] }}">{{ c[1] }}</label>
+                </div>
+            {% endfor %}
+
+            {% for day in days %}
+                <div class="form-group">
+                    <h3>{{ day[1] }}</h3>
+                    {% for key, value in hours.items() %}
+                        <input type="checkbox" id="{{ day[0] }}-{{ key }}" name="{{ day[0] }}-{{ key }}">
+                        <label for="{{ day[0] }}-{{ key }}">{{ value }}</label>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+        <input type="submit">
+    </form>
+
+    <a href="{{ url_for('users.logout') }}", class="default-link">
+        <div class="d-flex flex-row align-items-center justify-content-center p-2 header-button">
+            <p class="header-text m-0">Wyloguj</p>
+        </div>
+    </a>
+</div>
+{% endblock content %}
