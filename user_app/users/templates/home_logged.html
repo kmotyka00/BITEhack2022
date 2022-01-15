@@ -2,34 +2,51 @@
 {% block content %}
 <div class="container">
     <form action="/" method="GET">
-        <div class="d-flex flex-col flex-wrap">
-            <div class="form-group d-flex">
-                <div>
+        <div class="container">
+            <div class="row">
+                 <div class="border border-dark">
                     <h2>Wybierz interesujące Cię kursy</h2>
                 </div>
-                <div>
-                    {% for c in courses %}
-                        <input type="checkbox" id="{{ c[0] }}" name="{{ c[0] }}">
-                        <label for="{{ c[0] }}">{{ c[1] }}</label>
-                    {% endfor %}
-                </div>
             </div>
-            <br>
-            <div class="border border-dark">
-                <h2>Zaznacz godziny które Ci odpowiadają</h2>
-            </div>
-                {% for day in days %}
-                    <div class="form-group">
-                        <h3>{{ day[1] }}</h3>
-                        {% for key, value in hours.items() %}
-                            <input type="checkbox" id="{{ day[0] }}-{{ key }}" name="{{ day[0] }}-{{ key }}">
-                            <label for="{{ day[0] }}-{{ key }}">{{ value }}</label>
+            <div class="row">
+                 <div class="form-group mb-5 training_form p-2 rounded">
+                    <div class="d-flex">
+                        {% for c in courses %}
+                            <div class="bg-dark d-flex flex-row align-items-center justify-content-center mr-1 p-1 rounded">
+                                <input type="checkbox" id="{{ c[0] }}" name="{{ c[0] }}">
+                                <label class="m-0 ml-2" for="{{ c[0] }}">{{ c[1] }}</label>
+                            </div>
                         {% endfor %}
                     </div>
+                </div>
+                <br>
+            </div>
+            <div class="row">
+                <div class="border border-dark">
+                    <h2>Zaznacz godziny, które Ci odpowiadają</h2>
+                </div>
+            </div>
+            <div class="row">
+                {% for day in days %}
+                    <div class="form-group mr-1 training_form p-2 rounded">
+                        <div class="">
+                            <div>
+                                <h3>{{ day[1] }}</h3>
+                            </div>
+                            <div>
+                                {% for key, value in hours.items() %}
+                                    <div class="bg-dark d-flex flex-row align-items-center justify-content-center m-1 p-1 rounded">
+                                        <input type="checkbox" id="{{ day[0] }}-{{ key }}" name="{{ day[0] }}-{{ key }}">
+                                        <label class="m-0 ml-1" for="{{ day[0] }}-{{ key }}">{{ value }}</label>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
                 {% endfor %}
-
+            </div>
         </div>
-        <input type="submit">
+        <input type="submit" value="wyślij preferencje">
     </form>
 
     <a href="{{ url_for('users.logout') }}", class="default-link">

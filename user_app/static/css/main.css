@@ -64,6 +64,10 @@ body{
     color: #bfbfbf;
 }
 
+.training_form{
+    background-color: #595858
+}
+
 .app-window{
     width: 120px;
     height: 120px;
