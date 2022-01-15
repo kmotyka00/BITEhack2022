@@ -19,7 +19,7 @@ import kivy.clock
 import webbrowser
 import pathlib
 import threading
-from schedule import Schedule
+from schedule import Schedule, NotEnoughTimeslots
 import time
 import glob
 import copy
@@ -45,14 +45,40 @@ try:
 except IndexError:
     instructor_file = str()
 
-# global variable
+# global variables
 schedule_global = None
 initial_solution = None
+
+# flags
+NOT_ENOUGH_TIMESLOTS = False
 
 
 class MainWindow(Screen):
     pass
 
+def not_enough_timeslots_popup():
+    global NOT_ENOUGH_TIMESLOTS
+    NOT_ENOUGH_TIMESLOTS = True
+
+    popup = Popup(title=f'Not enough timeslots')
+    popup_content = BoxLayout(orientation="vertical")
+    all_timeslots = ScheduleParameters.schedule_parameters['class_num'] * \
+                    ScheduleParameters.schedule_parameters['day_num'] * \
+                    ScheduleParameters.schedule_parameters['time_slot_num']
+    label = Label(text=f"Not enough timeslots: " +
+                       f"\nall timeslots number is calculeted as:" +
+                       f"\nall_timeslots = class_num * day_num * time_slot_num" +
+                       f"\nYour number = {all_timeslots}"
+                       f"\n", halign='center', valign='center')
+    # self.font_size: self.width / 8
+    label.bind(width=set_font_size(50))
+    # self.text_size: self.size
+    label.bind(size=set_text_size)
+    popup_content.add_widget(label)
+    popup_content.add_widget(
+        Button(text='Close', size_hint=(1, 0.2), on_press=popup.dismiss))
+    popup.content = popup_content
+    return popup.open()
 
 class Optimize(Screen):
     # TODO: usunąć wywoływanie opt. w schedule.py
@@ -82,6 +108,9 @@ class Optimize(Screen):
             'penalty_for_unmatched': 100,
             'use_penalty_method': False}
 
+    def change_screen(self, screen: str):
+        self.manager.current = screen
+
     def checkbox_greedy(self, instance, value):
         if value is True:
             self.parameters['greedy'] = True
@@ -107,7 +136,6 @@ class Optimize(Screen):
         else:
             self.parameters['use_penalty_method'] = False
             self.ids['change_instructor_box'].active = False
-
 
     def on_text(self, parameter, input_parameter):
         try:
@@ -142,10 +170,21 @@ class Optimize(Screen):
                           penalty_for_repeated=self.parameters['penalty_for_repeated'],
                           penalty_for_unmatched=self.parameters['penalty_for_unmatched'])
 
-            schedule_global.generate_random_schedule(greedy=self.parameters['greedy'])
+            try:
+                schedule_global.generate_random_schedule(greedy=self.parameters['greedy'])
+            except NotEnoughTimeslots:
+                not_enough_timeslots_popup()
+
+
             Optimize.clients_num = pd.read_csv(client_file, sep=";").shape[0]
             Optimize.instructors_num = pd.read_csv(instructor_file, sep=";").shape[0]
             initial_solution = copy.deepcopy(schedule_global)
+
+    def check_if_able_to_optimize(self):
+        if NOT_ENOUGH_TIMESLOTS:
+            not_enough_timeslots_popup()
+            self.change_screen('see_algorithm_parameters')
+
 
     def start_optimization(self):
         global schedule_global
@@ -303,49 +342,51 @@ class SeeSchedule(Screen):
 
     def generate_see_schedule_layout(self):
         # order is important, because it affects order of elements in GUI
-        if 'hours_layout' not in self.ids.bottom_part.ids:
-            self.genrate_hours_layout()
-        if 'schedule_layout' not in self.ids.bottom_part.ids:
-            self.generate_schedule_layout()
-        if 'days_layout' not in self.ids.top_bar.ids:
-            self.genrate_days_layout()
+        if 'hours_layout' in self.ids.bottom_part.ids:
+            self.ids.bottom_part.remove_widget(self.ids.bottom_part.ids['hours_layout'])
+        if 'schedule_layout' in self.ids.bottom_part.ids:
+            self.ids.bottom_part.remove_widget(self.ids.bottom_part.ids['schedule_layout'])
+        if 'days_layout' in self.ids.top_bar.ids:
+            self.ids.top_bar.remove_widget(self.ids.top_bar.ids['days_layout'])
+
+        self.genrate_hours_layout()
+        self.generate_schedule_layout()
+        self.genrate_days_layout()
 
     def generate_schedule_layout(self):
         schedule_layout = GridLayout(cols=ScheduleParameters.schedule_parameters['day_num'], size_hint=(0.86, 1))
         for time_slot in range(ScheduleParameters.schedule_parameters['day_num']
                                * ScheduleParameters.schedule_parameters['time_slot_num']):
-            if f'Button{time_slot}' not in self.ids.keys():
-                button = Button(text=f'{None}', halign='center', valign='center')
-                button.background_normal = ''
-                if time_slot % 2 == 0:
-                    button.background_color = [.8, .8, .9, .6]
-                else:
-                    button.background_color = [.8, .8, .9, .8]
-                # self.font_size: self.width / 8
-                button.bind(width=set_font_size(8))
-                # self.text_size: self.size
-                button.bind(size=set_text_size)
-                button.bind(on_press=self.chceck_content)
-                button.ids['lesson'] = None
-                button.ids['lesson_time_slot'] = None
-                schedule_layout.add_widget(button)
-                self.ids[f'Button{time_slot}'] = button
+            button = Button(text=f'{None}', halign='center', valign='center')
+            button.background_normal = ''
+            if time_slot % 2 == 0:
+                button.background_color = [.8, .8, .9, .6]
+            else:
+                button.background_color = [.8, .8, .9, .8]
+            # self.font_size: self.width / 8
+            button.bind(width=set_font_size(8))
+            # self.text_size: self.size
+            button.bind(size=set_text_size)
+            button.bind(on_press=self.chceck_content)
+            button.ids['lesson'] = None
+            button.ids['lesson_time_slot'] = None
+            schedule_layout.add_widget(button)
+            self.ids[f'Button{time_slot}'] = button
         self.ids.bottom_part.ids[f'schedule_layout'] = schedule_layout
         self.ids.bottom_part.add_widget(schedule_layout)
 
     def genrate_hours_layout(self):
         hours_layout = GridLayout(rows=ScheduleParameters.schedule_parameters['time_slot_num'], size_hint=(0.14, 1))
         for time_slot in range(ScheduleParameters.schedule_parameters['time_slot_num']):
-            if f'Button_hours{time_slot}' not in self.ids.keys():
-                button = Button(text=f'{time_slot}', halign='center', valign='center')
-                button.background_normal = ''
-                button.background_color = [.8, .8, .9, .2]
-                # self.font_size: self.width / 8
-                button.bind(width=set_font_size(8))
-                # self.text_size: self.size
-                button.bind(size=set_text_size)
-                hours_layout.add_widget(button)
-                self.ids[f'Button_hours{time_slot}'] = button
+            button = Button(text=f'{time_slot}', halign='center', valign='center')
+            button.background_normal = ''
+            button.background_color = [.8, .8, .9, .2]
+            # self.font_size: self.width / 8
+            button.bind(width=set_font_size(8))
+            # self.text_size: self.size
+            button.bind(size=set_text_size)
+            hours_layout.add_widget(button)
+            self.ids[f'Button_hours{time_slot}'] = button
         self.ids.bottom_part.ids[f'hours_layout'] = hours_layout
         self.ids.bottom_part.add_widget(hours_layout)
 
@@ -354,19 +395,18 @@ class SeeSchedule(Screen):
         #                                                                              +1 is for displayed class button
         days_layout = GridLayout(cols=ScheduleParameters.schedule_parameters['day_num']+1, size_hint=(0.86, 1))
         for day in range(ScheduleParameters.schedule_parameters['day_num']):
-            if f'Button_days{day}' not in self.ids.keys():
-                button = Button(text=f'{days[day]}', halign='center', valign='center')
-                button.background_normal = ''
-                if day % 2 == 0:
-                    button.background_color = [.8, .8, .9, .2]
-                else:
-                    button.background_color = [.8, .8, .9, .3]
-                # self.font_size: self.width / 8
-                button.bind(width=set_font_size(8))
-                # self.text_size: self.size
-                button.bind(size=set_text_size)
-                days_layout.add_widget(button)
-                self.ids[f'Button_days{day}'] = button
+            button = Button(text=f'{days[day]}', halign='center', valign='center')
+            button.background_normal = ''
+            if day % 2 == 0:
+                button.background_color = [.8, .8, .9, .2]
+            else:
+                button.background_color = [.8, .8, .9, .3]
+            # self.font_size: self.width / 8
+            button.bind(width=set_font_size(8))
+            # self.text_size: self.size
+            button.bind(size=set_text_size)
+            days_layout.add_widget(button)
+            self.ids[f'Button_days{day}'] = button
         self.ids.top_bar.ids[f'days_layout'] = days_layout
         self.ids.top_bar.add_widget(days_layout)
 
