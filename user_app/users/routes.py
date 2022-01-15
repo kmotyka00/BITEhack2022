@@ -5,9 +5,11 @@ from flask import render_template, url_for, flash, redirect, Blueprint, request,
 from flask_login import current_user, logout_user, login_required, login_user
 import datetime
 from user_app.utils import send_confirm_email
-from user_app.users.forms import LoginForm, RegistrationForm, ChoiceForm
+from user_app.users.forms import LoginForm, RegistrationForm
 from user_app.models import User
 from user_app import bcrypt, db
+import json
+import requests
 
 users = Blueprint('users', __name__, template_folder='templates')
 
@@ -44,7 +46,6 @@ def home():
     Return home page. This page is different for logged and
     not logged in users.
     """
-    form_pref = ChoiceForm()
     if current_user.is_authenticated:
         if request.args:
             user_preferences = {"id":current_user.id,
@@ -69,8 +70,11 @@ def home():
 
             user_preferences["classes"] = activities
             user_preferences["availability"] = day_available
+            headers = {'Content-type': 'application/json', 'Accept': 'text/plain'}
+            requests.post("http://localhost:5001", data=json.dumps(user_preferences), headers=headers)
 
-        return render_template("home_logged.html", form=form_pref, days=DAYS_DISCRETE, hours=HOURS_DISCRETE, courses=COURSES_DISCRETE)
+
+        return render_template("home_logged.html", days=DAYS_DISCRETE, hours=HOURS_DISCRETE, courses=COURSES_DISCRETE)
 
     form_log = LoginForm()
 

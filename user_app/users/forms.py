@@ -14,14 +14,6 @@ MIN_USR = 1
 MIN_PASS = 8
 
 
-def choice_classes():
-    return Classes.query
-
-
-class ChoiceForm(FlaskForm):
-    opts = QuerySelectField(query_factory=choice_classes, allow_blank=True)
-
-
 class LoginForm(FlaskForm):
     email = StringField('Email',
                         validators=[DataRequired(message='Pole wymagane'), Email(message='Niepoprawny format email')],
