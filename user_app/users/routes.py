@@ -3,9 +3,7 @@
 import shutil
 from flask import render_template, url_for, flash, redirect, Blueprint, request, current_app
 from flask_login import current_user, logout_user, login_required, login_user
-import os, errno
 import datetime
-import threading
 from user_app.utils import send_confirm_email
 from user_app.users.forms import LoginForm, RegistrationForm, ChoiceForm
 from user_app.models import User
@@ -33,6 +31,8 @@ HOURS_DISCRETE = {
     16 : "23:00 - 00:00",
     17 : "00:00 - 01:00"
 }
+
+
 DAYS_DISCRETE = [[0, "Poniedzialek"], [1, "Wtorek"], [2, "Sroda"], [3, "Czwartek"], [4, "Piatek"], [5, "Sobota"], [6, "Niedziela"]]
 COURSES_DISCRETE = [[0, "Zumba easy"], [1, "Zumba hard"], [2, "Fitness"]]
 
@@ -53,7 +53,6 @@ def home():
             day_available = []
             days = {}
             activities = []
-
             for el in request.args:
                 if "-" in el:
                     day_id = int(el[:1])
@@ -64,13 +63,11 @@ def home():
                         days[day_id] = [time_id]
                 else:
                     activities.append(int(el))
-            print(days.keys())
             for key in days.keys():
                 day_available.append([key, days[key]])
 
             user_preferences["classes"] = activities
             user_preferences["availability"] = day_available
-            print(user_preferences)
 
         return render_template("home_logged.html", form=form_pref, days=DAYS_DISCRETE, hours=HOURS_DISCRETE, courses=COURSES_DISCRETE)
 
@@ -111,6 +108,7 @@ def register():
     return render_template("registration.html", form_reg=form_reg, title="Rejestracja")
 
 
+@login_required
 @users.route("/logout")
 def logout():
     logout_user()
