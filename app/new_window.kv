@@ -170,7 +170,6 @@ WindowManager:
                         on_value:
                             root.parameters['alpha'] = self.value
 
-
             GridLayout:
                 size_hint: 1, 0.6
                 padding: 20
@@ -520,12 +519,7 @@ WindowManager:
                 halign: 'center'
                 valign: 'middle'
                 on_release:
-                    root.check_if_able_to_optimize()
-                    root.start_optimization()
-                    root.update_algorithm_parameters()
-
-
-
+                    root.button_start_optimization_on_release()
 
 <ScheduleOptions>:
     name: 'schedule options'

@@ -56,22 +56,22 @@ NOT_ENOUGH_TIMESLOTS = False
 class MainWindow(Screen):
     pass
 
+
 def not_enough_timeslots_popup():
     global NOT_ENOUGH_TIMESLOTS
     NOT_ENOUGH_TIMESLOTS = True
-
-    popup = Popup(title=f'Not enough timeslots')
+    popup = Popup(title=f'Not enough timeslots', size_hint=(0.5, 0.5))
     popup_content = BoxLayout(orientation="vertical")
     all_timeslots = ScheduleParameters.schedule_parameters['class_num'] * \
                     ScheduleParameters.schedule_parameters['day_num'] * \
                     ScheduleParameters.schedule_parameters['time_slot_num']
     label = Label(text=f"Not enough timeslots: " +
-                       f"\nall timeslots number is calculeted as:" +
+                       f"\nTime Slots number formula:" +
                        f"\nall_timeslots = class_num * day_num * time_slot_num" +
-                       f"\nYour number = {all_timeslots}"
+                       f"\n\nYour all timeslots number = {all_timeslots}"
                        f"\n", halign='center', valign='center')
     # self.font_size: self.width / 8
-    label.bind(width=set_font_size(50))
+    label.bind(width=set_font_size(30))
     # self.text_size: self.size
     label.bind(size=set_text_size)
     popup_content.add_widget(label)
@@ -81,7 +81,6 @@ def not_enough_timeslots_popup():
     return popup.open()
 
 class Optimize(Screen):
-    # TODO: usunąć wywoływanie opt. w schedule.py
     first_cost = float()
     second_cost = float()
     third_cost = float()
@@ -90,6 +89,7 @@ class Optimize(Screen):
     clients_num = int()
     instructors_num = int()
     SM = None
+
     def __init__(self, **kw):
         super().__init__(**kw)
         self.parameters = {
@@ -152,6 +152,14 @@ class Optimize(Screen):
         self.manager.get_screen('see_algorithm_parameters').ids.instructors_num.text = str(Optimize.instructors_num)
         self.manager.get_screen('see_algorithm_parameters').ids.alg_time.text = str(format(Optimize.alg_time, '.2f')) + " s"
 
+    def button_start_optimization_on_release(self):
+        global NOT_ENOUGH_TIMESLOTS
+        if not NOT_ENOUGH_TIMESLOTS:
+            self.start_optimization()
+            self.update_algorithm_parameters()
+        else:
+            not_enough_timeslots_popup()
+
     def generate_initial_solution(self, force=False):
         global schedule_global
         global initial_solution
@@ -179,12 +187,6 @@ class Optimize(Screen):
             Optimize.clients_num = pd.read_csv(client_file, sep=";").shape[0]
             Optimize.instructors_num = pd.read_csv(instructor_file, sep=";").shape[0]
             initial_solution = copy.deepcopy(schedule_global)
-
-    def check_if_able_to_optimize(self):
-        if NOT_ENOUGH_TIMESLOTS:
-            not_enough_timeslots_popup()
-            self.change_screen('see_algorithm_parameters')
-
 
     def start_optimization(self):
         global schedule_global
@@ -296,6 +298,7 @@ class ScheduleParameters(Screen):
         for parameter in ScheduleParameters.schedule_parameters:
             self.ids[parameter].text = str(getattr(schedule_global, parameter))
 
+
 class AboutOrganizer(Screen):
     def github_button_on(self):
         self.ids.github_button_img.source = 'images/GitHub-Mark-Light-120px-plus_pressed.png'
@@ -304,12 +307,14 @@ class AboutOrganizer(Screen):
         self.ids.github_button_img.source = 'images/GitHub-Mark-Light-120px-plus.png'
         webbrowser.open('https://github.com/kmotyka00/ScheduleOptimizationProblem')
 
+
 # Functions to enable assignment
 # self.font_size: self.width / 8
 def set_font_size(font_size_divider, *args, **kwargs):
     def wrap(instance, value, *args, **kwargs):
         instance.font_size = value / font_size_divider
     return wrap
+
 
 # self.text_size: self.size
 def set_text_size(instance, value):
@@ -331,10 +336,8 @@ class SeeSchedule(Screen):
         lesson_content_popup = Popup(title=f'Lesson information')
         popup_content = BoxLayout(orientation="vertical")
         label = Label(text=lesson_content, halign='center', valign='center')
-        # self.font_size: self.width / 8
-        label.bind(width=set_font_size(50))
-        # self.text_size: self.size
-        label.bind(size=set_text_size)
+        label.bind(width=set_font_size(50)) # python equivalent of  -> self.font_size: self.width / 8
+        label.bind(size=set_text_size) # python equivalent of -> self.text_size: self.size
         popup_content.add_widget(label)
         popup_content.add_widget(Button(text='Close', size_hint=(1, 0.2), on_press=lesson_content_popup.dismiss))
         lesson_content_popup.content = popup_content
