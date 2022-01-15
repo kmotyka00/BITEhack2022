@@ -6,6 +6,9 @@ import copy
 import random
 import time
 import matplotlib.pyplot as plt
+import xlrd
+
+CLIENTS_PATH = "Dataset_TEST.xls"
 
 
 class NotEnoughTimeslots(Exception):
@@ -213,7 +216,7 @@ class Schedule:
         Helps to print a current schedule preety and intuitive
     """
 
-    def __init__(self, client_file: str = './client_data/form_answers.csv',
+    def __init__(self, client_file: str =CLIENTS_PATH,
                  instructor_file: str = './instructor_data/instructors_info.csv',
                  class_num=1, day_num=6, time_slot_num=6, max_clients_per_training=5,
                  ticket_cost=40, hour_pay=50, pay_for_presence=50, class_renting_cost=500,
@@ -224,12 +227,27 @@ class Schedule:
         self.max_clients_per_training = max_clients_per_training
 
         self.clients = list()
-        df = pd.read_csv(client_file, sep=";")
-        for index, client in df.iterrows():
-            self.clients.append(Client(client['Client_ID'],
-                                       [LessonType(int(elem)) for elem in client['Lesson_Types'].split(sep=" ")]))
-        self.clients = np.array(self.clients)
+        #### OLD CODE ###
+        #df = pd.read_csv(client_file, sep=";")
+        #for index, client in df.iterrows():
+         #   self.clients.append(Client(client['Client_ID'],
+         #                              [LessonType(int(elem)) for elem in client['Lesson_Types'].split(sep=" ")]))
+        #self.clients = np.array(self.clients)
+        """ NEW CODE """
+        Workbook = xlrd.open_workbook("client_data/" + client_file)
+        sheet = Workbook.sheet_by_index(0)
+        data = list()
+        for i in range(9):
+            data.append(sheet.col_values(colx=i, start_rowx=1))
 
+        for i in range(1, len(data[0])):
+            selected_availability = list()
+            for j in range(2,9):
+                if len(data[j][i]) > 1:
+                    selected_availability.append([j-2, data[j][i]]) #TODO
+            trainings = [int(i) for i in data[1][i] if i != " "]
+            self.clients.append(Client(data[0][i], trainings, selected_availability)) #TODO sprawdzić czy rozdzielić stringa
+        self.clients = np.array(self.clients)
         self.instructors = list()
         df = pd.read_csv(instructor_file, sep=";")
         for index, instructor in df.iterrows():
@@ -747,47 +765,48 @@ class Schedule:
 
         return result
 
-#
-# SM = Schedule(client_file='./client_data/form_answers_2.csv',
-#                 instructor_file='./instructor_data/instructors_info_2.csv',
-#                 max_clients_per_training=5, time_slot_num=6, class_num=2)
-# SM.generate_random_schedule(greedy=False)
-#
-# print("\nINITIAL SCHEDULE")
-# print(SM)
-# print('Initial earnings: ', SM.get_cost())
-# first_cost = SM.get_cost()
-# tic = time.time()
-# best_cost, num_of_iter, all_costs = SM.simulated_annealing(alpha=0.999, initial_temp=1000, n_iter_one_temp=10,
-#                                                            min_temp=0.1,
-#                                                            epsilon=0.01, n_iter_without_improvement=10,
-#                                                            initial_solution=True, neighborhood_type_lst=['move_one',
-#                                                                                                          'change_instructors'])
-# toc = time.time()
-#
-# print("\nAFTER OPTIMIZATION")
-# print(SM)
-# print("Number of iterations: ", num_of_iter)
-#
-# print("Best earnings: ", best_cost)
-# second_cost = best_cost
-# print("Time: ", toc - tic)
-#
-# SM.improve_results()
-# print("\nIMPROVED SCHEDULE")
-# print(SM)
-# print("Best improved earnings: ", SM.get_cost())
-#
-# third_cost = SM.get_cost()
-#
-# print(f'{first_cost} $ --> {second_cost} $ --> {third_cost} $')
-#
-# plt.figure()
-# plt.plot(all_costs)
-# plt.title('Goal function over number of iterations')
-# plt.xlabel('Number of iterations')
-# plt.ylabel('Earnings [$]')
-# plt.show()
+
+SM = Schedule(client_file=CLIENTS_PATH,
+                instructor_file='./instructor_data/instructors_info_2.csv',
+                max_clients_per_training=5, time_slot_num=6, class_num=2)
+SM.generate_random_schedule(greedy=False)
+
+print("\nINITIAL SCHEDULE")
+print(SM)
+print('Initial earnings: ', SM.get_cost())
+first_cost = SM.get_cost()
+tic = time.time()
+best_cost, num_of_iter, all_costs = SM.simulated_annealing(alpha=0.999, initial_temp=1000, n_iter_one_temp=10,
+                                                           min_temp=0.1,
+                                                           epsilon=0.01, n_iter_without_improvement=10,
+                                                           initial_solution=False, neighborhood_type_lst=['move_one',
+                                                                                                         'change_instructors'])
+toc = time.time()
+
+print("\nAFTER OPTIMIZATION")
+print(SM)
+print("Number of iterations: ", num_of_iter)
+
+print("Best earnings: ", best_cost)
+second_cost = best_cost
+print("Time: ", toc - tic)
+
+SM.improve_results()
+print("\nIMPROVED SCHEDULE")
+print(SM)
+print("Best improved earnings: ", SM.get_cost())
+
+third_cost = SM.get_cost()
+
+print(f'{first_cost} $ --> {second_cost} $ --> {third_cost} $')
+
+plt.figure()
+plt.plot(all_costs)
+plt.title('Goal function over number of iterations')
+plt.xlabel('Number of iterations')
+plt.ylabel('Earnings [$]')
+plt.show()
+
 
 
 #  TODO: - dodanie listy kompetencji i mniej losowe przydzielanie prowadzących do zajęć (może jako prawdopodobieństwo)

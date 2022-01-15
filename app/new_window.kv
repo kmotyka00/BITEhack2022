@@ -42,8 +42,9 @@ WindowManager:
                 font_size: self.width/12
                 color: '#80ffdb'
                 on_release:
-                    app.root.current = 'optimize'
+                    app.root.current = 'see_algorithm_parameters'
                     root.manager.transition.direction = 'left'
+
 
             Button:
                 text: 'Schedule Options'
@@ -67,7 +68,6 @@ WindowManager:
                     app.root.current = 'see_schedule'
                     root.manager.transition.direction = 'left'
 
-
             Button:
                 text: 'Goal Function'
                 font_name: 'fonts/Lcd.ttf'
@@ -78,14 +78,6 @@ WindowManager:
                     app.root.current = 'goal_function'
                     root.manager.transition.direction = 'left'
 
-            Button:
-                text: 'See Algorithm Parameters'
-                font_name: 'fonts/Lcd.ttf'
-                font_size: self.width/12
-                color: '#80ffdb'
-                on_release:
-                    app.root.current = 'see_algorithm_parameters'
-                    root.manager.transition.direction = 'left'
 
             Button:
                 text: 'About Organizer'
@@ -471,6 +463,18 @@ WindowManager:
             size_hint: (1, 0.1)
 
             Button:
+                text: 'Go back'
+                text_size: self.size
+                font_name: 'fonts/Lcd.ttf'
+                font_size: '30dp'
+                color: '#80ffdb'
+                halign: 'center'
+                valign: 'middle'
+                on_release:
+                    app.root.current = 'see_algorithm_parameters'
+                    root.manager.transition.direction = 'right'
+
+            Button:
                 text: 'Main Menu'
                 text_size: self.size
                 font_name: 'fonts/Lcd.ttf'
@@ -480,34 +484,6 @@ WindowManager:
                 valign: 'middle'
                 on_release:
                     app.root.current = 'menu'
-                    root.manager.transition.direction = 'right'
-
-            Button:
-                text: 'See Schedule'
-                text_size: self.size
-                font_name: 'fonts/Lcd.ttf'
-                font_size: '30dp'
-                color: '#80ffdb'
-                halign: 'center'
-                valign: 'middle'
-                on_release:
-                    root.manager.get_screen('optimize').generate_initial_solution()
-                    root.manager.get_screen('see_schedule').generate_see_schedule_layout()
-                    root.manager.get_screen('see_schedule').update_schedule_description()
-                    app.root.current = 'see_schedule'
-                    root.manager.transition.direction = 'right'
-
-            Button:
-                text: 'See Goal Function'
-                text_size: self.size
-                font_name: 'fonts/Lcd.ttf'
-                font_size: '30dp'
-                color: '#80ffdb'
-                halign: 'center'
-                valign: 'middle'
-                on_release:
-                    root.manager.get_screen('goal_function').draw_plot()
-                    app.root.current = 'goal_function'
                     root.manager.transition.direction = 'right'
 
             Button:
@@ -1352,15 +1328,34 @@ WindowManager:
                         valign: 'middle'
 
         GridLayout:
-            cols: 1
+            rows: 1
             size_hint: (1, 0.1)
-            height: '100dp'
             Button:
                 text: 'Go Back'
                 font_name: 'fonts/Lcd.ttf'
-                font_size: '40dp'
+                font_size: self.width/8
                 color: '#80ffdb'
                 on_release:
                     app.root.current = 'menu'
                     root.manager.transition.direction = 'right'
+
+            Button:
+                text: 'Advanced settings'
+                font_name: 'fonts/Lcd.ttf'
+                font_size: self.width/8
+                color: '#80ffdb'
+                on_release:
+                    app.root.current = 'optimize'
+                    root.manager.transition.direction = 'left'
+
+            Button:
+                text: 'Start Optimization'
+                text_size: self.size
+                font_name: 'fonts/Lcd.ttf'
+                font_size: self.width/8
+                color: '#ebb61b'
+                halign: 'center'
+                valign: 'middle'
+                on_release:
+                    root.manager.get_screen('optimize').button_start_optimization_on_release()
 

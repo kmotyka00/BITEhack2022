@@ -5,7 +5,6 @@
 import random
 from schedule import Client
 
-import xlrd
 import xlwt
 MAX_AVAIBLE_HOURS = 20
 MAX_DAY_HOURS_AVAILABLE = 7
