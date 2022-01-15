@@ -48,7 +48,8 @@ def home():
         if request.args:
             user_preferences = {"id":current_user.id,
                                 "name":current_user.name,
-                                "surname":current_user.surname}
+                                "surname":current_user.surname,
+                                "email":current_user.email}
             day_available = []
             days = {}
             activities = []
