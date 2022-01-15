@@ -480,19 +480,7 @@ class SeeSchedule(Screen):
         pick_classroom_popup.open()
 
 
-class GoalFunction(Screen):
-    box = None
-
-    def draw_plot(self):
-        box = self.ids.box
-        box.clear_widgets()
-        plt.clf()
-        plt.plot(Optimize.all_costs)
-        plt.title('Goal function over number of iterations')
-        plt.xlabel('Number of iterations')
-        plt.ylabel('Earnings [$]')
-        box.add_widget(FigureCanvasKivyAgg(plt.gcf()))
-
+class SeeAlgorithmParameters(Screen):
     def reset_solution(self):
         global initial_solution
         global schedule_global
@@ -506,10 +494,7 @@ class GoalFunction(Screen):
                                                       'hour_pay': initial_solution.hour_pay,
                                                       'pay_for_presence': initial_solution.pay_for_presence,
                                                       'class_renting_cost': initial_solution.class_renting_cost}
-        ScheduleParameters.update_text_input_fields(self.manager.get_screen('schedule_parameters'))
-
-class SeeAlgorithmParameters(Screen):
-    pass
+            ScheduleParameters.update_text_input_fields(self.manager.get_screen('schedule_parameters'))
 
 class WindowManager(ScreenManager):
     pass

@@ -220,7 +220,8 @@ class Schedule:
                  instructor_file: str = './instructor_data/instructors_info.csv',
                  class_num=1, day_num=6, time_slot_num=6, max_clients_per_training=5,
                  ticket_cost=40, hour_pay=50, pay_for_presence=50, class_renting_cost=500,
-                 use_penalty_method=False, penalty_for_repeated=250, penalty_for_unmatched=100):
+                 use_penalty_method=False, penalty_for_repeated=250, penalty_for_unmatched=100,
+                 penalty_for_availability=40):
         self.class_num = class_num
         self.day_num = day_num  # monday - saturday
         self.time_slot_num = time_slot_num
@@ -244,7 +245,7 @@ class Schedule:
             selected_availability = list()
             for j in range(2,9):
                 if len(data[j][i]) > 1:
-                    selected_availability.append([j-2, data[j][i]]) #TODO
+                    selected_availability.append([j-2, [int(ts) for ts in data[j][i].split(sep=" ")]]) #TODO
             trainings = [LessonType(int(i)) for i in data[1][i] if i != " "]
             self.clients.append(Client(data[0][i], trainings, selected_availability)) #TODO sprawdzić czy rozdzielić stringa
         self.clients = np.array(self.clients)
@@ -269,6 +270,7 @@ class Schedule:
         self.use_penalty_method = use_penalty_method
         self.penalty_for_repeated = penalty_for_repeated
         self.penalty_for_unmatched = penalty_for_unmatched
+        self.penalty_for_availability = penalty_for_availability
 
     def generate_random_schedule(self, greedy=False):
         """
@@ -367,6 +369,7 @@ class Schedule:
         class_per_day = np.zeros(shape=(self.class_num, self.day_num))
         repeated_instructors = 0
         unmatched_instructors = 0
+        unmatched_user_availability = 0
 
         # for every lesson in solution count number of participants, instructors' hours and classrooms used
 
@@ -375,6 +378,10 @@ class Schedule:
                 used_instructors = list()
                 for c in range(current_solution.shape[0]):
                     if current_solution[c, d, ts] is not None:
+                        # cost function for user expectations:
+                        for participant in current_solution[c, d, ts].participants:
+                            if ts not in participant.selected_availability:
+                                unmatched_user_availability += 1
                         if current_solution[c, d, ts].lesson_type not in \
                                 current_solution[c, d, ts].instructor.qualifications:
                             unmatched_instructors += 1
@@ -390,22 +397,10 @@ class Schedule:
                self.pay_for_presence * (instructors_hours > 0).sum() - \
                self.class_renting_cost * class_per_day.sum()
 
-        # cost function for user expectations:
-        # POINTS_FOR_GOOD_ASSIGN = 20
-        # cost_client_expectations = 0
-        # for client in self.clients:
-        #     for room in range(current_solution.shape[0]):
-        #         for day in range(current_solution.shape[1]):
-        #             for time_discrete in range(current_solution.shape[2]):
-        #                 """Sprawdzenie zgodnosci treningu preferowanego przez klienta z treningiem w rozwiązaniu"""
-        #                 if current_solution[room][day][time_discrete].lesson_type in client.selected_training:
-        #                     """Sprawdzenie dostępności zadeklarowanej przez klienta z aktualnym rozwiązaniem"""
-        #                     if day in [choice[0] for choice in client.selected_availability] and time_discrete in [choice[1][1] for choice in client.selected_availability]:
-        #                         cost_client_expectations += POINTS_FOR_GOOD_ASSIGN
-
         if self.use_penalty_method:
             cost += unmatched_instructors * self.penalty_for_unmatched + \
-                    repeated_instructors * self.penalty_for_repeated
+                    repeated_instructors * self.penalty_for_repeated + \
+                    unmatched_user_availability + self.penalty_for_availability
         return cost
 
     def get_neighbor(self, current_solution, neighborhood_type_lst: List[str]):
