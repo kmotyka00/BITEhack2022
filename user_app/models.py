@@ -43,13 +43,3 @@ class User(db.Model, UserMixin):
             return None
         return User.query.get(user_id)
 
-
-class Classes(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(20), unique=True, nullable=False)
-    def __init__(self, id, name):
-        self.id = id
-        self.name = name
-
-    def __repr__(self):
-        return f"{self.name}"
