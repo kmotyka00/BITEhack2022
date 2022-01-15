@@ -236,7 +236,7 @@ class Optimize(Screen):
             Optimize.third_cost = third_cost
         else:
             print(f'{first_cost} $ --> {second_cost} $')
-
+        SM.get_result()
 
 
 class ScheduleOptions(Screen):

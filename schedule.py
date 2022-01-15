@@ -7,7 +7,9 @@ import random
 import time
 import matplotlib.pyplot as plt
 import xlrd
-
+# from json_script import Read_from_json
+import json
+import os
 CLIENTS_PATH = "Dataset_TEST.xls"
 
 
@@ -50,9 +52,10 @@ class Client:
         Helps to print information about the client prettier and cleaner
     """
 
-    def __init__(self, id: int, selected_training: List[LessonType] = None, selected_availability: List = None):
+    def __init__(self, id: int, selected_training: List[LessonType] = None, selected_availability: List = None, email:str=""):
         self.id = id
         self.selected_availability = selected_availability
+        self.email = email
         # checks if list of selected trainings was given, if not, creates empty array
         if selected_training is None:
             self.selected_training = np.array(list())
@@ -167,6 +170,17 @@ class Lesson:
         return f"I: {self.instructor.id}, L: {lesson_type}"
 
 
+class ClientEmail:
+    def __init__(self, first_name, second_name, client_id, email, trainings):
+        self.first_name = first_name
+        self.second_name = second_name
+        self.client_id = client_id
+        self.email = email
+        self.trainings = trainings
+
+    def __repr__(self):
+        return str(self.client_id)
+
 class Schedule:
     """
     A class used to represent our Schedule 
@@ -234,19 +248,23 @@ class Schedule:
          #                              [LessonType(int(elem)) for elem in client['Lesson_Types'].split(sep=" ")]))
         #self.clients = np.array(self.clients)
         """ NEW CODE """
-        Workbook = xlrd.open_workbook(client_file)
-        sheet = Workbook.sheet_by_index(0)
-        data = list()
-        for i in range(9):
-            data.append(sheet.col_values(colx=i, start_rowx=1))
+        # Workbook = xlrd.open_workbook(client_file)
+        # sheet = Workbook.sheet_by_index(0)
+        # data = list()
+        # for i in range(9):
+        #     data.append(sheet.col_values(colx=i, start_rowx=1))
+        #
+        # for i in range(1, len(data[0])):
+        #     selected_availability = list()
+        #     for j in range(2,9):
+        #         if len(data[j][i]) > 1:
+        #             selected_availability.append([j-2, data[j][i]]) #TODO
+        #     trainings = [LessonType(int(i)) for i in data[1][i] if i != " "]
+        #     self.clients.append(Client(data[0][i], trainings, selected_availability)) #TODO sprawdzić czy rozdzielić stringa
 
-        for i in range(1, len(data[0])):
-            selected_availability = list()
-            for j in range(2,9):
-                if len(data[j][i]) > 1:
-                    selected_availability.append([j-2, data[j][i]]) #TODO
-            trainings = [LessonType(int(i)) for i in data[1][i] if i != " "]
-            self.clients.append(Client(data[0][i], trainings, selected_availability)) #TODO sprawdzić czy rozdzielić stringa
+        """JSON READING"""
+        self.clients = Read_from_json()
+
         self.clients = np.array(self.clients)
         self.instructors = list()
         df = pd.read_csv(instructor_file, sep=";")
@@ -269,6 +287,41 @@ class Schedule:
         self.use_penalty_method = use_penalty_method
         self.penalty_for_repeated = penalty_for_repeated
         self.penalty_for_unmatched = penalty_for_unmatched
+        self.result_email = list()
+
+    def get_result(self):
+        results = list()
+        for room in range(self.schedule.shape[0]):
+            for day in range(self.schedule.shape[1]):
+                for ts in range(self.schedule.shape[2]):
+                    for participant in self.schedule[room][day][ts].participants:
+                        results.append([participant.id, [day, ts, self.schedule[room][day][ts].lesson_type]])
+
+        id_and_trainings = dict()
+        for elem in results:
+            if results[0] in id_and_trainings.keys():
+                id_and_trainings[results[0]].append(results[1])
+            else:
+                id_and_trainings[results[0]] = [results[1]]
+
+
+        clients_req = list()
+        for file in os.listdir('client_data/json_files/'):
+            f = open(f'client_data/json_files/{file}')  # 'client_data/json_files/'
+            data = json.load(f)
+            clients_req.append(ClientEmail(data['name'], data['surname'], data['id'], data['email'], id_and_trainings[data['id']]))
+
+        self.result_email = clients_req
+        #
+        # client_email = list()
+        # for client in clients_req:
+        #     id_client = client.id
+        #     cl_em = ClientEmail(client.)
+        #     for result in results:
+        #         if result[0] == id_client:
+        #
+
+
 
     def generate_random_schedule(self, greedy=False):
         """
@@ -764,6 +817,16 @@ class Schedule:
                         result += str(self.schedule[c, d, ts]) + "\n"
 
         return result
+
+
+def Read_from_json(flag: bool=True):
+    clients_alg = list()
+    for file in os.listdir('client_data/json_files/'):
+        f = open(f'client_data/json_files/{file}') # 'client_data/json_files/'
+        data = json.load(f)
+        clients_alg.append(Client(data['id'], data['classes'], data['availability']))
+
+    return clients_alg
 
 
 if __name__ == '__main__':
