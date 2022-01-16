@@ -32,7 +32,7 @@ import pandas as pd
 
 
 try:
-    client_file = glob.glob('../client_data/Dataset_TEST.xls')[0]
+    client_file = glob.glob('../client_data/json_files')[0]
 # When ther is no such file the list is empty and we get index error,
 # which we try to capture
 except IndexError:
@@ -93,7 +93,7 @@ class Optimize(Screen):
     def __init__(self, **kw):
         super().__init__(**kw)
         self.parameters = {
-            'neighborhood_type_lst': ['move_one'],
+            'neighborhood_type_lst': ['move_one', 'change_participants'],
             # parameter unused by end user, moved to function call
             # 'initial_solution': False,
             'alpha': 0.5,
@@ -225,17 +225,17 @@ class Optimize(Screen):
         Optimize.second_cost = second_cost
         print("Time: ", toc - tic)
 
-        if self.parameters['improve_results']:
-            SM.improve_results()
-            print("\nIMPROVED SCHEDULE")
-            print(SM)
-            print("Best improved earnings: ", SM.get_cost())
-
-            third_cost = SM.get_cost()
-            print(f'{first_cost} $ --> {second_cost} $ --> {third_cost} $')
-            Optimize.third_cost = third_cost
-        else:
-            print(f'{first_cost} $ --> {second_cost} $')
+        # if self.parameters['improve_results']:
+        #     SM.improve_results()
+        #     print("\nIMPROVED SCHEDULE")
+        #     print(SM)
+        #     print("Best improved earnings: ", SM.get_cost())
+        #
+        #     third_cost = SM.get_cost()
+        #     print(f'{first_cost} $ --> {second_cost} $ --> {third_cost} $')
+        #     Optimize.third_cost = third_cost
+        # else:
+        print(f'{first_cost} $ --> {second_cost} $')
 
 
 
