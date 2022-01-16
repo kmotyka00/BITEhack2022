@@ -299,6 +299,33 @@ class Schedule:
         self.penalty_for_unmatched = penalty_for_unmatched
         self.penalty_for_availability = penalty_for_availability
         self.penalty_for_exceeding_group_limit = penalty_for_exceeding_group_limit
+        self.result_email = list()
+
+    def get_results(self):
+        results = list()
+        for room in range(self.schedule.shape[0]):
+            for day in range(self.schedule.shape[1]):
+                for ts in range(self.schedule.shape[2]):
+                    if self.schedule[room][day][ts]:
+                        for participant in self.schedule[room][day][ts].participants:
+                            results.append([participant.id, [day, ts, self.schedule[room][day][ts].lesson_type]])
+
+        id_and_trainings = dict()
+        for elem in results:
+
+            if elem[0] in id_and_trainings.keys():
+                id_and_trainings[elem[0]].append(elem[1])
+            else:
+                id_and_trainings[elem[0]] = [elem[1]]
+
+        clients_req = list()
+        for file in os.listdir('../client_data/json_files/'):
+            f = open(f'../client_data/json_files/{file}')  # 'client_data/json_files/'
+            data = json.load(f)
+            clients_req.append(
+                ClientEmail(data['name'], data['surname'], data['id'], data['email'], id_and_trainings[data['id']]))
+
+        self.result_email = clients_req
 
     def generate_random_schedule(self, greedy=False):
         """

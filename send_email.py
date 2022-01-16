@@ -29,6 +29,11 @@ class ClientsEmail:
         self.trainings = trainings  # list (LessonType, Day, Hour)
 
 
+lesson_types = {0: 'Cullulite Killer', 1: 'Zumba', 2: 'Zumba Advanced', 3: 'Fitness', 4: 'Crossfit',
+                5: 'Brazilian Butt', 6: 'Pilates', 7: 'City Pump', 8: 'Stretching', 9: 'Yoga'}
+
+timeslots_dict = generate_timeslots(start_hour=6, timeslots_num=18)
+
 client1 = ClientsEmail('Kacper', 'Motyka', 'kmotyka2000@gmail.com', [('Pilates', 'Wed', '16:00-17:00'), ('Pump', 'Tue', '17:00-18:00')])
 client2 = ClientsEmail('Kacper', 'Motyka', 'kacpermotyka4@gmail.com', [('Essa', 'Wed', '16:00-17:00'), ('Essa23', 'Tue', '17:00-18:00')])
 
@@ -56,12 +61,7 @@ def send_emails_to_clients(clients: List[ClientsEmail]):
             smtp.send_message(msg)
 
 
-lesson_types = {0: 'Cullulite Killer', 1: 'Zumba', 2: 'Zumba Advanced', 3: 'Fitness', 4: 'Crossfit',
-                5: 'Brazilian Butt', 6: 'Pilates', 7: 'City Pump', 8: 'Stretching', 9: 'Yoga'}
 
-timeslots_dict = generate_timeslots(start_hour=6, timeslots_num=18)
-
-#send_emails_to_clients([client1, client2])
 
 
 

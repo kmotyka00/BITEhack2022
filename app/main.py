@@ -1,6 +1,6 @@
 #!/usr/bin/python
 # -*- coding: utf-8 -*-
-
+import send_email
 from kivy.app import App
 from kivy.metrics import cm
 from kivy.properties import StringProperty, BooleanProperty
@@ -236,6 +236,9 @@ class Optimize(Screen):
         #     Optimize.third_cost = third_cost
         # else:
         print(f'{first_cost} $ --> {second_cost} $')
+        SM.get_results()
+        #TODO: skonczyc maile
+        #send_email.send_emails_to_clients([client1, client2])
 
 
 
