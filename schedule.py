@@ -1,3 +1,6 @@
+import json
+import os
+
 import numpy as np
 import pandas as pd
 from typing import List
@@ -7,9 +10,20 @@ import random
 import time
 import matplotlib.pyplot as plt
 import xlrd
+# from json_script import Read_from_json
+import json
+import os
 
-CLIENTS_PATH = "Dataset_TEST.xls"
 
+def read_from_json(path):
+    clients_alg = list()
+    clients_email = list()
+    for file in os.listdir(path):
+        f = open(path + '/' + file)  # 'client_data/json_files/'
+        data = json.load(f)
+        clients_alg.append(Client(data['id'], [LessonType(elem) for elem in data['classes']], data['availability']))
+        # clients_email.append(ClientEmail(data['name'], data['surname'], data['id'], data['email'], None))
+    return clients_alg
 
 class NotEnoughTimeslots(Exception):
     pass
@@ -50,9 +64,10 @@ class Client:
         Helps to print information about the client prettier and cleaner
     """
 
-    def __init__(self, id: int, selected_training: List[LessonType] = None, selected_availability: List = None):
+    def __init__(self, id: int, selected_training: List[LessonType] = None, selected_availability: List = None, email:str=""):
         self.id = id
         self.selected_availability = selected_availability
+        self.email = email
         # checks if list of selected trainings was given, if not, creates empty array
         if selected_training is None:
             self.selected_training = np.array(list())
@@ -145,9 +160,9 @@ class Lesson:
 
         # checks if participants list was given, if not, creates empty array
         if participants is None:
-            self.participants = np.array(list())
+            self.participants = list()
         else:
-            self.participants = np.array(participants)
+            self.participants = participants
 
     def __str__(self):
         """
@@ -166,6 +181,17 @@ class Lesson:
         lesson_type = lt[1]
         return f"I: {self.instructor.id}, L: {lesson_type}"
 
+
+class ClientEmail:
+    def __init__(self, first_name, second_name, client_id, email, trainings):
+        self.first_name = first_name
+        self.second_name = second_name
+        self.client_id = client_id
+        self.email = email
+        self.trainings = trainings
+
+    def __repr__(self):
+        return str(self.client_id)
 
 class Schedule:
     """
@@ -216,11 +242,12 @@ class Schedule:
         Helps to print a current schedule preety and intuitive
     """
 
-    def __init__(self, client_file: str =CLIENTS_PATH,
-                 instructor_file: str = './instructor_data/instructors_info.csv',
+    def __init__(self, client_file: str,
+                 instructor_file: str,
                  class_num=1, day_num=6, time_slot_num=6, max_clients_per_training=5,
                  ticket_cost=40, hour_pay=50, pay_for_presence=50, class_renting_cost=500,
-                 use_penalty_method=False, penalty_for_repeated=250, penalty_for_unmatched=100):
+                 use_penalty_method=False, penalty_for_repeated=250, penalty_for_unmatched=100,
+                 penalty_for_availability=40, penalty_for_exceeding_group_limit=20):
         self.class_num = class_num
         self.day_num = day_num  # monday - saturday
         self.time_slot_num = time_slot_num
@@ -233,20 +260,21 @@ class Schedule:
          #   self.clients.append(Client(client['Client_ID'],
          #                              [LessonType(int(elem)) for elem in client['Lesson_Types'].split(sep=" ")]))
         #self.clients = np.array(self.clients)
-        """ NEW CODE """
-        Workbook = xlrd.open_workbook(client_file)
-        sheet = Workbook.sheet_by_index(0)
-        data = list()
-        for i in range(9):
-            data.append(sheet.col_values(colx=i, start_rowx=1))
-
-        for i in range(1, len(data[0])):
-            selected_availability = list()
-            for j in range(2,9):
-                if len(data[j][i]) > 1:
-                    selected_availability.append([j-2, data[j][i]]) #TODO
-            trainings = [LessonType(int(i)) for i in data[1][i] if i != " "]
-            self.clients.append(Client(data[0][i], trainings, selected_availability)) #TODO sprawdzić czy rozdzielić stringa
+        # """ NEW CODE """
+        # Workbook = xlrd.open_workbook(client_file)
+        # sheet = Workbook.sheet_by_index(0)
+        # data = list()
+        # for i in range(9):
+        #     data.append(sheet.col_values(colx=i, start_rowx=1))
+        #
+        # for i in range(1, len(data[0])):
+        #     selected_availability = list()
+        #     for j in range(2,9):
+        #         if len(data[j][i]) > 1:
+        #             selected_availability.append([j-2, [int(ts) for ts in data[j][i].split(sep=" ")]]) #TODO
+        #     trainings = [LessonType(int(i)) for i in data[1][i] if i != " "]
+        #     self.clients.append(Client(data[0][i], trainings, selected_availability)) #TODO sprawdzić czy rozdzielić stringa
+        self.clients = read_from_json(client_file)
         self.clients = np.array(self.clients)
         self.instructors = list()
         df = pd.read_csv(instructor_file, sep=";")
@@ -269,6 +297,35 @@ class Schedule:
         self.use_penalty_method = use_penalty_method
         self.penalty_for_repeated = penalty_for_repeated
         self.penalty_for_unmatched = penalty_for_unmatched
+        self.penalty_for_availability = penalty_for_availability
+        self.penalty_for_exceeding_group_limit = penalty_for_exceeding_group_limit
+        self.result_email = list()
+
+    def get_results(self):
+        results = list()
+        for room in range(self.schedule.shape[0]):
+            for day in range(self.schedule.shape[1]):
+                for ts in range(self.schedule.shape[2]):
+                    if self.schedule[room][day][ts]:
+                        for participant in self.schedule[room][day][ts].participants:
+                            results.append([participant.id, [day, ts, self.schedule[room][day][ts].lesson_type]])
+
+        id_and_trainings = dict()
+        for elem in results:
+
+            if elem[0] in id_and_trainings.keys():
+                id_and_trainings[elem[0]].append(elem[1])
+            else:
+                id_and_trainings[elem[0]] = [elem[1]]
+
+        clients_req = list()
+        for file in os.listdir('../client_data/json_files/'):
+            f = open(f'../client_data/json_files/{file}')  # 'client_data/json_files/'
+            data = json.load(f)
+            clients_req.append(
+                ClientEmail(data['name'], data['surname'], data['id'], data['email'], id_and_trainings[data['id']]))
+
+        self.result_email = clients_req
 
     def generate_random_schedule(self, greedy=False):
         """
@@ -367,6 +424,8 @@ class Schedule:
         class_per_day = np.zeros(shape=(self.class_num, self.day_num))
         repeated_instructors = 0
         unmatched_instructors = 0
+        unmatched_user_availability = 0
+        exceeded_participants = 0
 
         # for every lesson in solution count number of participants, instructors' hours and classrooms used
 
@@ -375,11 +434,16 @@ class Schedule:
                 used_instructors = list()
                 for c in range(current_solution.shape[0]):
                     if current_solution[c, d, ts] is not None:
+                        # cost function for user expectations:
+                        for participant in current_solution[c, d, ts].participants:
+                            if ts not in participant.selected_availability:
+                                unmatched_user_availability += 1
                         if current_solution[c, d, ts].lesson_type not in \
                                 current_solution[c, d, ts].instructor.qualifications:
                             unmatched_instructors += 1
+                        exceeded_participants += max(0, len(current_solution[c, d, ts].participants) - self.max_clients_per_training)
                         used_instructors.append(current_solution[c, d, ts].instructor.id)
-                        participants_sum += current_solution[c, d, ts].participants.shape[0]
+                        participants_sum += len(current_solution[c, d, ts].participants)
                         instructors_hours[current_solution[c, d, ts].instructor.id, d] += 1
                         class_per_day[c, d] = 1
                 repeated_instructors += len(used_instructors) - len(set(used_instructors))
@@ -390,22 +454,11 @@ class Schedule:
                self.pay_for_presence * (instructors_hours > 0).sum() - \
                self.class_renting_cost * class_per_day.sum()
 
-        # cost function for user expectations:
-        # POINTS_FOR_GOOD_ASSIGN = 20
-        # cost_client_expectations = 0
-        # for client in self.clients:
-        #     for room in range(current_solution.shape[0]):
-        #         for day in range(current_solution.shape[1]):
-        #             for time_discrete in range(current_solution.shape[2]):
-        #                 """Sprawdzenie zgodnosci treningu preferowanego przez klienta z treningiem w rozwiązaniu"""
-        #                 if current_solution[room][day][time_discrete].lesson_type in client.selected_training:
-        #                     """Sprawdzenie dostępności zadeklarowanej przez klienta z aktualnym rozwiązaniem"""
-        #                     if day in [choice[0] for choice in client.selected_availability] and time_discrete in [choice[1][1] for choice in client.selected_availability]:
-        #                         cost_client_expectations += POINTS_FOR_GOOD_ASSIGN
-
         if self.use_penalty_method:
-            cost += unmatched_instructors * self.penalty_for_unmatched + \
-                    repeated_instructors * self.penalty_for_repeated
+            cost -= unmatched_instructors * self.penalty_for_unmatched + \
+                    repeated_instructors * self.penalty_for_repeated + \
+                    unmatched_user_availability * self.penalty_for_availability + \
+                    exceeded_participants * self.penalty_for_exceeding_group_limit
         return cost
 
     def get_neighbor(self, current_solution, neighborhood_type_lst: List[str]):
@@ -512,6 +565,22 @@ class Schedule:
 
                 current_solution[random_not_none_id].instructor = new_instructor
 
+            if neighborhood_type == 'change_participants':
+                current_solution = current_solution.reshape((-1, 1, 1)).squeeze()
+
+                not_none_id_list = np.argwhere(current_solution != None)
+                random_not_none_id = tuple(random.choice(not_none_id_list))
+                random_participant = random.choice(current_solution[random_not_none_id].participants)
+                type_of_selected_lesson = current_solution[random_not_none_id].lesson_type
+
+                available_timeslots = [ts[0] for ts in current_solution[not_none_id_list]
+                                       if ts[0].lesson_type == type_of_selected_lesson]
+
+                new_timeslot = random.choice(available_timeslots)
+
+                new_timeslot.participants.append(random_participant)
+                current_solution[random_not_none_id].participants.remove(random_participant)
+
         current_solution = current_solution.reshape((self.class_num, self.day_num, self.time_slot_num))
         return current_solution
 
@@ -613,131 +682,131 @@ class Schedule:
         self.schedule = best_solution
         return best_cost, total_counter, all_costs
 
-    def improve_results(self):
-        # TODO: dodać wyświtlanie przed i po w GUUI
-        """
-        Minimizes days of presence for each instructor.
-        
-        Method which looks for days when instructor teaches only one class and tries
-        to move this lesson to a day when instructor provides more classes. 
-        
-        ...
-        Parameters
-        ----------
-
-        """
-        # loop repeating until there is no change to ensure
-        # that instructor 1 can be moved in space freed by instructor 3
-        changed = True
-        iter = 0
-        while changed and iter < 1000:
-            iter += 1
-            changed = False
-
-            # loop for each instructor
-            for instructor in self.instructors:
-
-                # pick all trainings taught by instructor
-                # in format
-                # [day, list of timeslots of lessons taught by instructor, list of timeslots free in that day, class]
-                trainings = list()
-                for c in range(self.schedule.shape[0]):
-                    for d in range(self.schedule.shape[1]):
-                        timeslots = list()
-                        free_ts = list()
-                        for ts in range(self.schedule.shape[2]):
-                            if self.schedule[c, d, ts] != None:
-                                if self.schedule[c, d, ts].instructor.id == instructor.id:
-                                    timeslots.append(ts)
-                            else:
-                                free_ts.append(ts)
-                        if len(timeslots) > 0:
-                            trainings.append([d, timeslots, free_ts, c])
-
-                # sorting trainings by number of lessons taught by instructor in that day
-                trainings = [v for v in sorted(trainings, key=lambda item: len(item[1]))]
-
-                # for each day check if trainings can be reassigned
-                # to some day with more trainings thought by that instructor
-                for i in range(len(trainings) - 1):
-                    for j in range(i + 1, len(trainings)):
-                        timeslots_taken = list()
-                        changed = False
-                        REASSIGNMENT_INVALID_FLAG = False
-                        # check if lessons from trainings[i] can be reassigned
-                        # to the day represented by trainings[j]
-                        if len(trainings[i][1]) <= len(trainings[j][2]):
-                            for ts_iter in range(len(trainings[i][1])):
-                                for c in range(self.schedule.shape[0]):
-                                    if self.schedule[c, trainings[j][0], trainings[j][2][ts_iter]] is not None:
-                                        if self.schedule[c, trainings[j][0], trainings[j][2][ts_iter]].instructor.id \
-                                                == instructor.id:
-                                            REASSIGNMENT_INVALID_FLAG = True
-                                if REASSIGNMENT_INVALID_FLAG:
-                                    break
-                                # reassign
-                                self.schedule[trainings[j][3], trainings[j][0], trainings[j][2][ts_iter]] = \
-                                    self.schedule[trainings[i][3], trainings[i][0], trainings[i][1][ts_iter]]
-
-                                self.schedule[trainings[i][3], trainings[i][0], trainings[i][1][ts_iter]] = None
-                                # add to taken sluts in j
-                                trainings[j][1].append(trainings[j][2][ts_iter])
-                                # add to free slots in i
-                                trainings[i][2].append(trainings[i][1][ts_iter])
-                                # memorize to delete from free in j
-                                timeslots_taken.append(trainings[j][2][ts_iter])
-
-                                # mark that changes have been made
-                                changed = True
-
-                            if not REASSIGNMENT_INVALID_FLAG:
-                                # delete memorized slots from free in j
-                                for ts_iter in timeslots_taken:
-                                    trainings[j][2].remove(ts_iter)
-                                # clear list of taken slots in i
-                                trainings[i][1] = []
-
-                        # if previous statement is untrue check if opposite reassignment can be performed,
-                        # i. e. check if lessons from trainings[j] can be reassigned
-                        # to the day represented by trainings[i]
-                        elif len(trainings[i][2]) > len(trainings[j][1]):
-                            for ts_iter in range(len(trainings[j][1])):
-                                for c in range(self.schedule.shape[0]):
-                                    if self.schedule[c, trainings[i][0], trainings[i][2][ts_iter]] is not None:
-                                        if self.schedule[c, trainings[i][0], trainings[i][2][ts_iter]].instructor.id \
-                                                    == instructor.id:
-                                            REASSIGNMENT_INVALID_FLAG = True
-                                if REASSIGNMENT_INVALID_FLAG:
-                                    break
-                                self.schedule[trainings[i][3], trainings[i][0], trainings[i][2][ts_iter]] = \
-                                    self.schedule[trainings[j][3], trainings[j][0], trainings[j][1][ts_iter]]
-
-                                self.schedule[trainings[j][3], trainings[j][0], trainings[j][1][ts_iter]] = None
-                                # add to taken slots in i
-                                trainings[i][1].append(trainings[i][2][ts_iter])
-                                # add to free sluts in j
-                                trainings[j][2].append(trainings[j][1][ts_iter])
-                                # memorize to delete from free in i
-                                timeslots_taken.append(trainings[i][2][ts_iter])
-
-                                # mark that changes have been made
-                                changed = True
-
-                            if not REASSIGNMENT_INVALID_FLAG:
-                                # delete memorized slots from free in i
-                                for ts_iter in timeslots_taken:
-                                    trainings[i][2].remove(ts_iter)
-                                    # clear list of taken slots in i
-                                trainings[j][1] = []
-
-                        # if changes have been made
-                        if changed:
-                            # sort trainings to keep ascending order of
-                            # number of lessons thought by instructor in that day
-                            trainings = [v for v in sorted(trainings, key=lambda item: len(item[1]))]
-                            # go to next iteration of i - next iterations for that i are unnecessary,
-                            # because trainings[i] have been reassigned
-                            break
+    # def improve_results(self):
+    #     # TODO: dodać wyświtlanie przed i po w GUUI
+    #     """
+    #     Minimizes days of presence for each instructor.
+    #
+    #     Method which looks for days when instructor teaches only one class and tries
+    #     to move this lesson to a day when instructor provides more classes.
+    #
+    #     ...
+    #     Parameters
+    #     ----------
+    #
+    #     """
+    #     # loop repeating until there is no change to ensure
+    #     # that instructor 1 can be moved in space freed by instructor 3
+    #     changed = True
+    #     iter = 0
+    #     while changed and iter < 1000:
+    #         iter += 1
+    #         changed = False
+    #
+    #         # loop for each instructor
+    #         for instructor in self.instructors:
+    #
+    #             # pick all trainings taught by instructor
+    #             # in format
+    #             # [day, list of timeslots of lessons taught by instructor, list of timeslots free in that day, class]
+    #             trainings = list()
+    #             for c in range(self.schedule.shape[0]):
+    #                 for d in range(self.schedule.shape[1]):
+    #                     timeslots = list()
+    #                     free_ts = list()
+    #                     for ts in range(self.schedule.shape[2]):
+    #                         if self.schedule[c, d, ts] != None:
+    #                             if self.schedule[c, d, ts].instructor.id == instructor.id:
+    #                                 timeslots.append(ts)
+    #                         else:
+    #                             free_ts.append(ts)
+    #                     if len(timeslots) > 0:
+    #                         trainings.append([d, timeslots, free_ts, c])
+    #
+    #             # sorting trainings by number of lessons taught by instructor in that day
+    #             trainings = [v for v in sorted(trainings, key=lambda item: len(item[1]))]
+    #
+    #             # for each day check if trainings can be reassigned
+    #             # to some day with more trainings thought by that instructor
+    #             for i in range(len(trainings) - 1):
+    #                 for j in range(i + 1, len(trainings)):
+    #                     timeslots_taken = list()
+    #                     changed = False
+    #                     REASSIGNMENT_INVALID_FLAG = False
+    #                     # check if lessons from trainings[i] can be reassigned
+    #                     # to the day represented by trainings[j]
+    #                     if len(trainings[i][1]) <= len(trainings[j][2]):
+    #                         for ts_iter in range(len(trainings[i][1])):
+    #                             for c in range(self.schedule.shape[0]):
+    #                                 if self.schedule[c, trainings[j][0], trainings[j][2][ts_iter]] is not None:
+    #                                     if self.schedule[c, trainings[j][0], trainings[j][2][ts_iter]].instructor.id \
+    #                                             == instructor.id:
+    #                                         REASSIGNMENT_INVALID_FLAG = True
+    #                             if REASSIGNMENT_INVALID_FLAG:
+    #                                 break
+    #                             # reassign
+    #                             self.schedule[trainings[j][3], trainings[j][0], trainings[j][2][ts_iter]] = \
+    #                                 self.schedule[trainings[i][3], trainings[i][0], trainings[i][1][ts_iter]]
+    #
+    #                             self.schedule[trainings[i][3], trainings[i][0], trainings[i][1][ts_iter]] = None
+    #                             # add to taken sluts in j
+    #                             trainings[j][1].append(trainings[j][2][ts_iter])
+    #                             # add to free slots in i
+    #                             trainings[i][2].append(trainings[i][1][ts_iter])
+    #                             # memorize to delete from free in j
+    #                             timeslots_taken.append(trainings[j][2][ts_iter])
+    #
+    #                             # mark that changes have been made
+    #                             changed = True
+    #
+    #                         if not REASSIGNMENT_INVALID_FLAG:
+    #                             # delete memorized slots from free in j
+    #                             for ts_iter in timeslots_taken:
+    #                                 trainings[j][2].remove(ts_iter)
+    #                             # clear list of taken slots in i
+    #                             trainings[i][1] = []
+    #
+    #                     # if previous statement is untrue check if opposite reassignment can be performed,
+    #                     # i. e. check if lessons from trainings[j] can be reassigned
+    #                     # to the day represented by trainings[i]
+    #                     elif len(trainings[i][2]) > len(trainings[j][1]):
+    #                         for ts_iter in range(len(trainings[j][1])):
+    #                             for c in range(self.schedule.shape[0]):
+    #                                 if self.schedule[c, trainings[i][0], trainings[i][2][ts_iter]] is not None:
+    #                                     if self.schedule[c, trainings[i][0], trainings[i][2][ts_iter]].instructor.id \
+    #                                                 == instructor.id:
+    #                                         REASSIGNMENT_INVALID_FLAG = True
+    #                             if REASSIGNMENT_INVALID_FLAG:
+    #                                 break
+    #                             self.schedule[trainings[i][3], trainings[i][0], trainings[i][2][ts_iter]] = \
+    #                                 self.schedule[trainings[j][3], trainings[j][0], trainings[j][1][ts_iter]]
+    #
+    #                             self.schedule[trainings[j][3], trainings[j][0], trainings[j][1][ts_iter]] = None
+    #                             # add to taken slots in i
+    #                             trainings[i][1].append(trainings[i][2][ts_iter])
+    #                             # add to free sluts in j
+    #                             trainings[j][2].append(trainings[j][1][ts_iter])
+    #                             # memorize to delete from free in i
+    #                             timeslots_taken.append(trainings[i][2][ts_iter])
+    #
+    #                             # mark that changes have been made
+    #                             changed = True
+    #
+    #                         if not REASSIGNMENT_INVALID_FLAG:
+    #                             # delete memorized slots from free in i
+    #                             for ts_iter in timeslots_taken:
+    #                                 trainings[i][2].remove(ts_iter)
+    #                                 # clear list of taken slots in i
+    #                             trainings[j][1] = []
+    #
+    #                     # if changes have been made
+    #                     if changed:
+    #                         # sort trainings to keep ascending order of
+    #                         # number of lessons thought by instructor in that day
+    #                         trainings = [v for v in sorted(trainings, key=lambda item: len(item[1]))]
+    #                         # go to next iteration of i - next iterations for that i are unnecessary,
+    #                         # because trainings[i] have been reassigned
+    #                         break
 
     def __str__(self):
         """
@@ -766,6 +835,16 @@ class Schedule:
         return result
 
 
+def Read_from_json(flag: bool=True):
+    clients_alg = list()
+    for file in os.listdir('client_data/json_files/'):
+        f = open(f'client_data/json_files/{file}') # 'client_data/json_files/'
+        data = json.load(f)
+        clients_alg.append(Client(data['id'], data['classes'], data['availability']))
+
+    return clients_alg
+
+
 if __name__ == '__main__':
     SM = Schedule(client_file=CLIENTS_PATH,
                     instructor_file='./instructor_data/instructors_info_2.csv',
@@ -792,7 +871,7 @@ if __name__ == '__main__':
     second_cost = best_cost
     print("Time: ", toc - tic)
 
-    SM.improve_results()
+    # SM.improve_results()
     print("\nIMPROVED SCHEDULE")
     print(SM)
     print("Best improved earnings: ", SM.get_cost())

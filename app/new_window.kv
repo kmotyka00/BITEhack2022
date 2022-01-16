@@ -7,7 +7,6 @@ WindowManager:
     ClientFileChooser:
     InstructorFileChooser:
     ScheduleParameters:
-    GoalFunction:
     SeeAlgorithmParameters:
 
 
@@ -69,17 +68,6 @@ WindowManager:
                     root.manager.transition.direction = 'left'
 
             Button:
-                text: 'Goal Function'
-                font_name: 'fonts/Lcd.ttf'
-                font_size: self.width/12
-                color: '#80ffdb'
-                on_release:
-                    root.manager.get_screen('goal_function').draw_plot()
-                    app.root.current = 'goal_function'
-                    root.manager.transition.direction = 'left'
-
-
-            Button:
                 text: 'About Organizer'
                 font_name: 'fonts/Lcd.ttf'
                 font_size: self.width/12
@@ -117,6 +105,7 @@ WindowManager:
                     size_hint: 0.2, 0.8
                     halign: 'center'
                     valign: 'middle'
+                    state: 'down'
                     on_state: root.toggle_penalty_method(self)
 
                 BoxLayout:
@@ -1035,20 +1024,6 @@ WindowManager:
                     root.manager.transition.direction = 'right'
 
             Button:
-                text: 'See Goal Function'
-                text_size: self.size
-                font_name: 'fonts/Lcd.ttf'
-                font_size: self.width/8
-                text_size: self.size
-                color: '#80ffdb'
-                halign: 'center'
-                valign: 'middle'
-                on_release:
-                    root.manager.get_screen('goal_function').draw_plot()
-                    app.root.current = 'goal_function'
-                    root.manager.transition.direction = 'right'
-
-            Button:
                 text: 'Schedule parameters'
                 font_name: 'fonts/Lcd.ttf'
                 font_size: self.width/8
@@ -1071,71 +1046,6 @@ WindowManager:
                 on_release:
                     app.root.current = 'optimize'
                     root.manager.transition.direction = 'left'
-
-
-<GoalFunction>:
-    name: 'goal_function'
-    id: goal_function
-    BoxLayout:
-        id: box
-        size_hint_y: .9
-        pos_hint: {"top": 1}
-    GridLayout:
-        rows: 1
-        size_hint: (1, 0.1)
-        Button:
-            text: 'Main menu'
-            font_name: 'fonts/Lcd.ttf'
-            font_size: '40dp'
-            color: '#80ffdb'
-            halign: 'center'
-            valign: 'middle'
-            on_release:
-                app.root.current = 'menu'
-                root.manager.transition.direction = 'right'
-
-        Button:
-            text: 'See Schedule'
-            text_size: self.size
-            font_name: 'fonts/Lcd.ttf'
-            font_size: self.width/8
-            text_size: self.size
-            color: '#80ffdb'
-            halign: 'center'
-            valign: 'middle'
-            on_release:
-                root.manager.get_screen('optimize').generate_initial_solution()
-                root.manager.get_screen('see_schedule').generate_see_schedule_layout()
-                root.manager.get_screen('see_schedule').update_schedule_description()
-                app.root.current = 'see_schedule'
-                root.manager.transition.direction = 'right'
-
-        Button:
-            text: 'To Optimization'
-            font_name: 'fonts/Lcd.ttf'
-            font_size: self.width/8
-            text_size: self.size
-            halign: 'center'
-            valign: 'middle'
-            color: '#80ffdb'
-            on_release:
-                app.root.current = 'optimize'
-                root.manager.transition.direction = 'left'
-
-        Button:
-            text: 'Reset solution'
-            font_name: 'fonts/Lcd.ttf'
-            font_size: self.width/8
-            text_size: self.size
-            halign: 'center'
-            valign: 'middle'
-            color: '#ff1100'
-            on_release:
-                root.reset_solution()
-                root.manager.get_screen('see_schedule').generate_see_schedule_layout()
-                root.manager.get_screen('see_schedule').update_schedule_description()
-                app.root.current = 'see_schedule'
-                root.manager.transition.direction = 'left'
 
 
 # liczba iteracji, koszt, koszt po algorytmie, koszt po improve i pauza jak nie będzie włączonego,
@@ -1347,6 +1257,20 @@ WindowManager:
                 on_release:
                     app.root.current = 'optimize'
                     root.manager.transition.direction = 'left'
+
+            Button:
+                text: 'Reset solution'
+                font_name: 'fonts/Lcd.ttf'
+                font_size: self.width/8
+                text_size: self.size
+                halign: 'center'
+                valign: 'middle'
+                color: '#ff1100'
+                on_release:
+                    root.reset_solution()
+                    root.manager.get_screen('see_schedule').generate_see_schedule_layout()
+                    root.manager.get_screen('see_schedule').update_schedule_description()
+
 
             Button:
                 text: 'Start Optimization'
