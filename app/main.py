@@ -54,7 +54,9 @@ NOT_ENOUGH_TIMESLOTS = False
 
 
 class MainWindow(Screen):
-    pass
+    def send_emails(self):
+        global schedule_global
+        send_email.send_emails_to_clients(schedule_global.result_email)
 
 
 def not_enough_timeslots_popup():
@@ -110,6 +112,8 @@ class Optimize(Screen):
 
     def change_screen(self, screen: str):
         self.manager.current = screen
+
+
 
     def checkbox_greedy(self, instance, value):
         if value is True:
@@ -181,6 +185,9 @@ class Optimize(Screen):
             try:
                 schedule_global.generate_random_schedule(greedy=self.parameters['greedy'])
             except NotEnoughTimeslots:
+                schedule_global.schedule = schedule_global.schedule.reshape((schedule_global.class_num,
+                                                                             schedule_global.day_num,
+                                                                             schedule_global.time_slot_num))
                 not_enough_timeslots_popup()
 
 

@@ -21,12 +21,12 @@ def generate_timeslots(start_hour: int = 6, timeslots_num: int = 18):
     return timeslots_dict
 
 
-class ClientsEmail:
-    def __init__(self, first_name, second_name, email, trainings):
-        self.first_name = first_name
-        self.second_name = second_name
-        self.email = email
-        self.trainings = trainings  # list (LessonType, Day, Hour)
+# class ClientsEmail:
+#     def __init__(self, first_name, second_name, email, trainings):
+#         self.first_name = first_name
+#         self.second_name = second_name
+#         self.email = email
+#         self.trainings = trainings  # list (LessonType, Day, Hour)
 
 
 lesson_types = {0: 'Cullulite Killer', 1: 'Zumba', 2: 'Zumba Advanced', 3: 'Fitness', 4: 'Crossfit',
@@ -34,11 +34,8 @@ lesson_types = {0: 'Cullulite Killer', 1: 'Zumba', 2: 'Zumba Advanced', 3: 'Fitn
 
 timeslots_dict = generate_timeslots(start_hour=6, timeslots_num=18)
 
-client1 = ClientsEmail('Kacper', 'Motyka', 'kmotyka2000@gmail.com', [('Pilates', 'Wed', '16:00-17:00'), ('Pump', 'Tue', '17:00-18:00')])
-client2 = ClientsEmail('Kacper', 'Motyka', 'kacpermotyka4@gmail.com', [('Essa', 'Wed', '16:00-17:00'), ('Essa23', 'Tue', '17:00-18:00')])
 
-
-def send_emails_to_clients(clients: List[ClientsEmail]):
+def send_emails_to_clients(clients):
 
     for client in clients:
 

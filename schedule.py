@@ -323,7 +323,7 @@ class Schedule:
             f = open(f'../client_data/json_files/{file}')  # 'client_data/json_files/'
             data = json.load(f)
             clients_req.append(
-                ClientEmail(data['name'], data['surname'], data['id'], data['email'], id_and_trainings[data['id']]))
+                ClientEmail(data['name'], data['surname'], data['id'], data['email'], id_and_trainings[int(data['id'])]))
 
         self.result_email = clients_req
 
@@ -570,6 +570,10 @@ class Schedule:
 
                 not_none_id_list = np.argwhere(current_solution != None)
                 random_not_none_id = tuple(random.choice(not_none_id_list))
+                if len(current_solution[random_not_none_id].participants) == 0:
+                    current_solution = current_solution.reshape((self.class_num, self.day_num, self.time_slot_num))
+                    return current_solution
+
                 random_participant = random.choice(current_solution[random_not_none_id].participants)
                 type_of_selected_lesson = current_solution[random_not_none_id].lesson_type
 

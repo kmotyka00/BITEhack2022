@@ -22,9 +22,9 @@ WindowManager:
         BoxLayout:
             orientation: 'vertical'
             Image:
-                source: 'images/schedule-icon.png'
+                source: 'images/dumbell.png'
             Label:
-                text: 'Schedule Organizer'
+                text: 'Ascii Enjoyers GYM'
 
 
                 font_name: 'fonts/Lcd.ttf'
@@ -44,6 +44,13 @@ WindowManager:
                     app.root.current = 'see_algorithm_parameters'
                     root.manager.transition.direction = 'left'
 
+            Button:
+                text: 'Send Emails'
+                font_name: 'fonts/Lcd.ttf'
+                font_size: self.width/12
+                color: '#80ffdb'
+                on_release:
+                    root.send_emails()
 
             Button:
                 text: 'Schedule Options'
