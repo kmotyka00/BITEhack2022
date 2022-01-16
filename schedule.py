@@ -10,7 +10,9 @@ import random
 import time
 import matplotlib.pyplot as plt
 import xlrd
-
+# from json_script import Read_from_json
+import json
+import os
 
 
 def read_from_json(path):
@@ -62,9 +64,10 @@ class Client:
         Helps to print information about the client prettier and cleaner
     """
 
-    def __init__(self, id: int, selected_training: List[LessonType] = None, selected_availability: List = None):
+    def __init__(self, id: int, selected_training: List[LessonType] = None, selected_availability: List = None, email:str=""):
         self.id = id
         self.selected_availability = selected_availability
+        self.email = email
         # checks if list of selected trainings was given, if not, creates empty array
         if selected_training is None:
             self.selected_training = np.array(list())
@@ -178,6 +181,17 @@ class Lesson:
         lesson_type = lt[1]
         return f"I: {self.instructor.id}, L: {lesson_type}"
 
+
+class ClientEmail:
+    def __init__(self, first_name, second_name, client_id, email, trainings):
+        self.first_name = first_name
+        self.second_name = second_name
+        self.client_id = client_id
+        self.email = email
+        self.trainings = trainings
+
+    def __repr__(self):
+        return str(self.client_id)
 
 class Schedule:
     """
@@ -792,6 +806,16 @@ class Schedule:
                         result += str(self.schedule[c, d, ts]) + "\n"
 
         return result
+
+
+def Read_from_json(flag: bool=True):
+    clients_alg = list()
+    for file in os.listdir('client_data/json_files/'):
+        f = open(f'client_data/json_files/{file}') # 'client_data/json_files/'
+        data = json.load(f)
+        clients_alg.append(Client(data['id'], data['classes'], data['availability']))
+
+    return clients_alg
 
 
 if __name__ == '__main__':
